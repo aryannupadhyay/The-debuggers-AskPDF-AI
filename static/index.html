@@ -118,6 +118,12 @@
       }
     }
   </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
 </head>
 <body>
 
@@ -130,11 +136,11 @@
     <div class="form-card">
       <h2>Upload PDF URL & Ask Anything</h2>
 
-      <label for="pdfUrl">PDF URL</label>
-      <input type="text" id="pdfUrl" placeholder="Enter public PDF URL" />
+      <label for="fileUrl">PDF URL</label>
+      <input type="text" id="fileUrl" placeholder="Enter public PDF URL" required />
 
       <label for="question">Your Question</label>
-      <textarea id="question" placeholder="Ask your question about the PDF..."></textarea>
+      <textarea id="question" placeholder="Ask your question about the PDF..." required></textarea>
 
       <button onclick="askQuestion()">Ask AI</button>
 
@@ -148,45 +154,40 @@
 
   <script>
     async function askQuestion() {
-      const fileUrl = document.getElementById('pdfUrl').value.trim();
-      const question = document.getElementById('question').value.trim();
-      const responseDiv = document.getElementById('response');
+      const pdfUrl = document.getElementById("fileUrl").value;
+      const question = document.getElementById("question").value;
 
-      if (!fileUrl || !question) {
-        alert("Please enter both a PDF URL and a question.");
+      if (!pdfUrl || !question) {
+        alert("Please fill in both fields.");
         return;
       }
 
-      try {
-        const formData = new URLSearchParams();
-        formData.append("file_url", fileUrl);
-        formData.append("question", question);
+      const response = await fetch("/ask", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          file_url: pdfUrl,
+          question: question,
+        }),
+      });
 
-        const res = await fetch("http://127.0.0.1:8000/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: formData
-        });
+      const data = await response.json();
+      const answerBox = document.getElementById("response");
 
-        const data = await res.json();
+      if (data.answer) {
+        answerBox.innerHTML = marked.parse(data.answer);
+MathJax.typeset();
 
-        if (data.answer) {
-          responseDiv.innerText = data.answer;
-          responseDiv.style.display = "block";
-        } else if (data.error) {
-          responseDiv.innerText = "Error: " + data.error;
-          responseDiv.style.display = "block";
-        } else {
-          responseDiv.innerText = "Something went wrong.";
-          responseDiv.style.display = "block";
-        }
-
-      } catch (err) {
-        responseDiv.innerText = "Failed to get response from server.";
-        responseDiv.style.display = "block";
+        answerBox.style.display = "block";
+      } else {
+        answerBox.innerText = "❌ Error: " + (data.error || "No response.");
+        answerBox.style.display = "block";
       }
     }
   </script>
 
 </body>
+
 </html>
