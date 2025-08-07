@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AskPDF AI | Chat with Your PDFs</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #e0f7fa, #fff);
+      color: #333;
+    }
+
+    header {
+      background-color: #00695c;
+      color: white;
+      padding: 30px 0;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+    }
+
+    header p {
+      margin-top: 10px;
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .main-section {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 20px;
+    }
+
+    .form-card {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      max-width: 700px;
+      width: 100%;
+    }
+
+    .form-card h2 {
+      margin-top: 0;
+      margin-bottom: 25px;
+      font-size: 1.8rem;
+      text-align: center;
+      color: #00796b;
+    }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin: 15px 0 5px;
+    }
+
+    input, textarea, button {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    button {
+      background-color: #00796b;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #004d40;
+    }
+
+    .answer-box {
+      margin-top: 25px;
+      padding: 20px;
+      background-color: #f1f8e9;
+      border-left: 4px solid #8bc34a;
+      color: #333;
+      white-space: pre-line;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      background-color: #eeeeee;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    @media screen and (max-width: 768px) {
+      .form-card {
+        padding: 20px;
+      }
+
+      header h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>AskPDF AI</h1>
+    <p>Ask questions from any PDF — powered by GPT</p>
+  </header>
+
+  <section class="main-section">
+    <div class="form-card">
+      <h2>Upload PDF URL & Ask Anything</h2>
+
+      <label for="pdfUrl">PDF URL</label>
+      <input type="text" id="pdfUrl" placeholder="Enter public PDF URL" />
+
+      <label for="question">Your Question</label>
+      <textarea id="question" placeholder="Ask your question about the PDF..."></textarea>
+
+      <button onclick="askQuestion()">Ask AI</button>
+
+      <div id="response" class="answer-box" style="display: none;"></div>
+    </div>
+  </section>
+
+  <footer>
+    Made with ❤️ by The debuggers & GPT-4 — 2025
+  </footer>
+
+  <script>
+    async function askQuestion() {
+      const fileUrl = document.getElementById('pdfUrl').value.trim();
+      const question = document.getElementById('question').value.trim();
+      const responseDiv = document.getElementById('response');
+
+      if (!fileUrl || !question) {
+        alert("Please enter both a PDF URL and a question.");
+        return;
+      }
+
+      try {
+        const formData = new URLSearchParams();
+        formData.append("file_url", fileUrl);
+        formData.append("question", question);
+
+        const res = await fetch("http://127.0.0.1:8000/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (data.answer) {
+          responseDiv.innerText = data.answer;
+          responseDiv.style.display = "block";
+        } else if (data.error) {
+          responseDiv.innerText = "Error: " + data.error;
+          responseDiv.style.display = "block";
+        } else {
+          responseDiv.innerText = "Something went wrong.";
+          responseDiv.style.display = "block";
+        }
+
+      } catch (err) {
+        responseDiv.innerText = "Failed to get response from server.";
+        responseDiv.style.display = "block";
+      }
+    }
+  </script>
+
+</body>
+</html>
