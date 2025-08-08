@@ -117,12 +117,31 @@
         font-size: 2rem;
       }
     }
+    
+      .loader {
+        display: none;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #00796b;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 10px auto;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    
+
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
 </head>
 <body>
@@ -143,51 +162,62 @@
       <textarea id="question" placeholder="Ask your question about the PDF..." required></textarea>
 
       <button onclick="askQuestion()">Ask AI</button>
+      <div class="loader" id="loader"></div>
+
 
       <div id="response" class="answer-box" style="display: none;"></div>
+      <div id="loading" style="display: none; color: #666; margin-top: 10px;">
+  ⏳ Thinking...
+</div>
+
     </div>
+
   </section>
 
   <footer>
     Made with ❤️ by The debuggers & GPT-4 — 2025
   </footer>
 
-  <script>
+    <script>
     async function askQuestion() {
-      const pdfUrl = document.getElementById("fileUrl").value;
-      const question = document.getElementById("question").value;
+    const pdfUrl = document.getElementById('fileUrl').value;
+    const question = document.getElementById('question').value;
 
-      if (!pdfUrl || !question) {
-        alert("Please fill in both fields.");
-        return;
-      }
+    document.getElementById('loader').style.display = 'block';
+    document.getElementById('response').style.display = 'none';
 
-      const response = await fetch("/ask", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          file_url: pdfUrl,
-          question: question,
-        }),
-      });
+    try {
+        const response = await fetch("/ask", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+                file_url: pdfUrl,
+                question: question,
+            }),
+        });
 
-      const data = await response.json();
-      const answerBox = document.getElementById("response");
+        const data = await response.json();
 
-      if (data.answer) {
-        answerBox.innerHTML = marked.parse(data.answer);
-MathJax.typeset();
+        // Markdown render
+        document.getElementById("response").innerHTML = marked.parse(data.answer || data.error || "No response.");
+        document.getElementById('response').style.display = 'block';
 
-        answerBox.style.display = "block";
-      } else {
-        answerBox.innerText = "❌ Error: " + (data.error || "No response.");
-        answerBox.style.display = "block";
-      }
+        // MathJax render
+        if (window.MathJax) {
+            MathJax.typesetPromise();
+        }
+    } catch (error) {
+        document.getElementById("response").innerText = "Error: " + error;
+        document.getElementById('response').style.display = 'block';
+    } finally {
+        document.getElementById('loader').style.display = 'none';
     }
+}
+
+
+
   </script>
-
 </body>
-
 </html>
